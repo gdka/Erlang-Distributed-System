@@ -3,7 +3,7 @@
 -author("vovak").
 
 %% API
--export([start/1, addMeToTheSystem/1]).
+-export([start/1, addMeToTheSystem/0]).
 
 
 -define(ELECTION_MESSAGE, 'ELEC').
@@ -42,10 +42,14 @@ loop(State) ->
   loop(NewState).
 
 
-addMeToTheSystem(Node) ->
+addMeToTheSystem() ->
+    register(?MODULE, self()),
+    {naming, naming@localhost} ! {whoismaster,{ ?MODULE,node()}},
+    Node = receive
+             { ok, Master } -> Master
+           end, 
     erlang:monitor_node(Node, true),
     sendAddMessage(Node),
-    register(?MODULE, self()),
     CoordState = receive
                   {?ADD_MENSSGE , StateCoord } ->  io:format("Connected~n"), StateCoord
                end,
