@@ -1,11 +1,4 @@
-%%%-------------------------------------------------------------------
-%%% @author vovak
-%%% @copyright (C) 2014, <COMPANY>
-%%% @doc
-%%%
-%%% @end
-%%% Created : 14. Oct 2014 13:07
-%%%-------------------------------------------------------------------
+
 -module(bully).
 -author("vovak").
 
@@ -44,13 +37,13 @@ loop(State) ->
 addMeToTheSystem(Node) ->
     sendAddMessage(Node),
     register(?MODULE, self()),
-    NewState = receive
-                    {?ADD_MENSSGE , State } ->  io:format("Connected~n"), State
-               end,
-    loop(NewState#state{ coordinator = Node }).
+    receive
+        {?ADD_MENSSGE , _ } ->  io:format("Connected~n")
+    end,
+    NewState = #state{ knownnodes = nodes(), coordinator = Node },
+    loop(NewState).
 
 addNodeStart(State, Node) when (node() == State#state.coordinator) ->
-    net_kernel:connect(Node),
     lists:foreach(fun sendAddMessage/1, State#state.knownnodes),
     NewState = addNode(State, Node),
     sendAddReplyMessage(Node, NewState),
@@ -61,6 +54,7 @@ addNodeStart(State, Node) ->
     loop(NewState).
 
 addNode(State, Node) -> 
+  net_kernel:connect(Node),
   NewNodes = (State#state.knownnodes)++[Node],
   NewState = State#state{knownnodes = NewNodes },
   NewState.
