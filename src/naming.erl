@@ -23,7 +23,7 @@ start(NamingServer) ->
      
     
 loop(State) ->
-    io:format("current nodes ~n"),
+    io:format("current nodes: ~n"),
     lists:foreach(fun(X) -> io:format("~s~n",[atom_to_list(X)]) end, State#state.namingnodes),
     io:format("current master: ~s~n",[State#state.master]),
     NewState = receive
