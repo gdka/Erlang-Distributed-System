@@ -15,10 +15,10 @@
 -define(DECODE_MESSAGE,'DECODE').
 -record(state, {timeout = infinity, knownnodes = [], coordinator = node(), dns= 'naming@192.168.1.128'} ).
 
-start(Nodes) ->
+start(DNS) ->
   register(?MODULE, self()),
   io:format("Node ~s has a PId of ~s.~n", [node(), os:getpid()]),
-  loop(startElection(#state{knownnodes = Nodes}, Nodes)).
+  loop(startElection(#state{dns=DNS}, Nodes)).
 
 loop(State) ->
   Timeout = State#state.timeout,
@@ -41,9 +41,9 @@ loop(State) ->
   loop(NewState).
 
 
-addMeToTheSystem() ->
+addMeToTheSystem(DNS) ->
     register(?MODULE, self()),
-    {naming, 'naming@192.168.1.128' } ! {whoismaster,{ ?MODULE,node()}},
+    {naming, DNS } ! {whoismaster,{ ?MODULE,node()}},
     Node = receive
              { ok, Master } -> Master
            end, 
