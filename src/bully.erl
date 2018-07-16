@@ -1,6 +1,5 @@
 
 -module(bully).
--author("vovak").
 
 %% API
 -export([start/1, addMeToTheSystem/0]).
@@ -8,7 +7,7 @@
 
 -define(ELECTION_MESSAGE, 'ELEC').
 -define(ADD_NODE_MESSAGE, 'ADD').
--define(ADD_MENSSGE, 'WTF').
+-define(ADD_MENSSGE, 'ADDED').
 -define(ELECTION_MESSAGE_RESPONSE, 'OKAY').
 -define(COORDINATOR_MESSAGE, 'BOSS').
 -define(RESPONSE_TIMEOUT, 10).
@@ -35,7 +34,7 @@ loop(State) ->
                {?COORDINATOR_MESSAGE, Node} -> setCoordinator(State, Node);
                {?ADD_NODE_MESSAGE, Node} -> addNodeStart(State, Node);
                {nodedown, Coordinator} -> setCoordinator(State,node()), startElection(State, State#state.knownnodes);
-               {nodedown, _} -> State
+               {nodedown, Node } -> removeNode(State, Node)
              after
                Timeout -> becomeCoordinator(State)
              end,
@@ -78,6 +77,10 @@ addNode(State, Node) ->
   NewState = State#state{knownnodes = NewNodes },
   NewState.
 
+removeNode(State, Node) ->
+    NewList = lists:delete(Node, State#state.knownnodes),
+    NewState = State#state{ knownnodes = NewList, coordinator = Node },
+    NewState.
 
 startElection(State, Nodes) ->
   lists:foreach(fun sendElectionMessage/1, higherIds(Nodes)),
