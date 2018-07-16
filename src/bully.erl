@@ -104,7 +104,7 @@ handle_decode(State,File,Client) ->
     io:format("~s will decode~n",[atom_to_list(NextNode)]),
     FirstNodes = lists:droplast(Nodes),
     DECODED = rpc:call(NextNode, dcrypto, decode, [File]),
-    {client, Client} ! {ok, DECODED },
+    Client ! {ok, DECODED },
     NowNodes = [ NextNode ] ++ FirstNodes, 
 
     State#state{knownnodes = NowNodes}.
@@ -114,7 +114,7 @@ handle_encode(State,File, Client) ->
     io:format("~s will encode~n",[atom_to_list(NextNode)]),
     FirstNodes = lists:droplast(Nodes),
     ENCODED = rpc:call(NextNode, dcrypto, encode, [File]),
-    {shell, Client} ! {ok, ENCODED },
+    Client ! {ok, ENCODED },
     NowNodes = [ NextNode ] ++ FirstNodes,
     State#state{knownnodes = NowNodes}.
 

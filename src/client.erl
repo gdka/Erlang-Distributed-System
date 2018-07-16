@@ -2,9 +2,21 @@
 -export([send/2]).
 
 
-send(File_name, decode) ->
+send(File_name, encode) ->
+    register(?MODULE, self()),
     {ok, FILE} = file:read_file(File_name),
-    {bully, master@localhost} ! {'DECODE', FILE, node()}; 
+    {bully, master@localhost} ! {'ENCODE', FILE,{?MODULE,  node()}},
+    receive
+       {ok, Encoded} -> Encoded
+    after 30000 ->
+            io:format("HOLIS")
 
-send(DECRYPTED, encode) ->
-    {bully, master@localhost} ! {'ENCODE', DECRYPTED, node()}.
+    end;
+send(DECRYPTED, decode) ->
+    register(?MODULE, self()),
+    {bully, master@localhost} ! {'DECODE', DECRYPTED, {?MODULE,  node()}},
+    receive
+       {ok, Decoded} -> Decoded
+    after 30000 ->
+            io:format("HOLIS")
+    end.
