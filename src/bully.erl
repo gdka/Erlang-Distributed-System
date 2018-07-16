@@ -5,6 +5,7 @@
 %% API
 -export([start/1, addMeToTheSystem/1]).
 
+
 -define(ELECTION_MESSAGE, 'ELEC').
 -define(ADD_NODE_MESSAGE, 'ADD').
 -define(ADD_MENSSGE, 'WTF').
@@ -40,14 +41,17 @@ loop(State) ->
              end,
   loop(NewState).
 
+
 addMeToTheSystem(Node) ->
     erlang:monitor_node(Node, true),
     sendAddMessage(Node),
     register(?MODULE, self()),
-    receive
-        {?ADD_MENSSGE , _ } ->  io:format("Connected~n")
-    end,
-    NewState = #state{ knownnodes = nodes(), coordinator = Node },
+    CoordState = receive
+                  {?ADD_MENSSGE , StateCoord } ->  io:format("Connected~n"), StateCoord
+               end,
+    ListAdd = lists:append([Node], CoordState#state.knownnodes),
+    NewList = lists:delete(node(), ListAdd),
+    NewState = CoordState#state{ knownnodes = NewList, coordinator = Node },
     loop(NewState).
 
 addNodeStart(State, NewNode) when (node() == State#state.coordinator) ->
