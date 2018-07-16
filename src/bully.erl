@@ -45,6 +45,7 @@ loop(State) ->
   loop(NewState).
 
 addMeToTheSystem(Node) ->
+    erlang:monitor_node(Node, true),
     sendAddMessage(Node),
     register(?MODULE, self()),
     NewState = receive
