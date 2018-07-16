@@ -5,7 +5,11 @@
 send(File_name, encode) ->
     register(?MODULE, self()),
     {ok, FILE} = file:read_file(File_name),
-    {bully, master@localhost} ! {'ENCODE', FILE,{?MODULE,  node()}},
+    {naming, naming@localhost} ! {whoismaster, {?MODULE, node()}}, 
+    MASTER = receive 
+		{ok, Master } -> Master
+	     end,
+    {bully, MASTER } ! {'ENCODE', FILE,{?MODULE,  node()}},
     receive
        {ok, Encoded} -> Encoded
     after 30000 ->
