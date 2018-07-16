@@ -2,7 +2,7 @@
 -module(bully).
 
 %% API
--export([start/1, addMeToTheSystem/0]).
+-export([start/1, addMeToTheSystem/1]).
 
 
 -define(ELECTION_MESSAGE, 'ELEC').
@@ -18,7 +18,7 @@
 start(DNS) ->
   register(?MODULE, self()),
   io:format("Node ~s has a PId of ~s.~n", [node(), os:getpid()]),
-  loop(startElection(#state{dns=DNS}, Nodes)).
+  loop(startElection(#state{dns=DNS}, [])).
 
 loop(State) ->
   Timeout = State#state.timeout,
