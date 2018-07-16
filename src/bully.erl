@@ -111,24 +111,46 @@ handleElectionMessage(State, Node) ->
     length(HigherNodes) == 0 -> becomeCoordinator(State);
     true -> sendOkMessage(Node), startElection(State, State#state.knownnodes)
   end.
+
+last([],_) ->
+   node();
+last(L,_)  ->
+    lists:last(L).
+
+droplast([]) ->
+	[];
+droplast(L) ->
+    lists:droplast(L).
+
 handle_decode(State,File,Client) ->
     Nodes = State#state.knownnodes,
-    NextNode = lists:last(Nodes),
+    NextNode = last(Nodes, node()),
     io:format("~s will decode~n",[atom_to_list(NextNode)]),
-    FirstNodes = lists:droplast(Nodes),
-    DECODED = rpc:call(NextNode, dcrypto, decode, [File]),
-    Client ! {ok, DECODED },
-    NowNodes = [ NextNode ] ++ FirstNodes, 
+    FirstNodes = droplast(Nodes),
+    NowNodes = if NextNode == node() ->
+		DECODED = dcrypto:decode(File),
+		FirstNodes;
+    		true ->
+         		    DECODED = rpc:call(NextNode, dcrypto, decode, [File]),
 
+			 [ NextNode ] ++ FirstNodes
+		end,
+    Client ! {ok, DECODED },
     State#state{knownnodes = NowNodes}.
+
 handle_encode(State,File, Client) ->
     Nodes = State#state.knownnodes,
-    NextNode = lists:last(Nodes),
+    NextNode = last(Nodes, node()),
     io:format("~s will encode~n",[atom_to_list(NextNode)]),
-    FirstNodes = lists:droplast(Nodes),
-    ENCODED = rpc:call(NextNode, dcrypto, encode, [File]),
+    FirstNodes = droplast(Nodes),
+    NowNodes = if NextNode == node() ->
+			ENCODED = dcrypto:encode(File),
+			FirstNodes;
+		true -> 
+			ENCODED = rpc:call(NextNode, dcrypto, encode, [File]),
+			[ NextNode ] ++ FirstNodes
+		end,
     Client ! {ok, ENCODED },
-    NowNodes = [ NextNode ] ++ FirstNodes,
     State#state{knownnodes = NowNodes}.
 
 waitForCoordinatorMessage(State) ->
