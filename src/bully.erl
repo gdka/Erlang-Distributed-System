@@ -34,7 +34,7 @@ loop(State) ->
                {?COORDINATOR_MESSAGE, Node} -> setCoordinator(State, Node);
                {?ADD_NODE_MESSAGE, Node} -> addNodeStart(State, Node);
                {nodedown, Coordinator} -> setCoordinator(State,node()), startElection(State, State#state.knownnodes);
-               {nodedown, Node } -> removeNode(State, Node)
+               {nodedown, Node } -> io:format("sss~n"),removeNode(State, Node)
              after
                Timeout -> becomeCoordinator(State)
              end,
@@ -54,11 +54,16 @@ addMeToTheSystem() ->
                end,
     ListAdd = lists:append([Node], CoordState#state.knownnodes),
     NewList = lists:delete(node(), ListAdd),
+    Monitor = fun (N) ->
+                 erlang:monitor_node(N, true)
+              end,
+    lists:foreach(Monitor,NewList),
     NewState = CoordState#state{ knownnodes = NewList, coordinator = Node },
     loop(NewState).
 
 addNodeStart(State, NewNode) when (node() == State#state.coordinator) ->
     net_kernel:connect(NewNode),
+    erlang:monitor_node(NewNode, true),
     SendAddMessage = fun (Node) ->
                             io:format("~s >>>>> ~s >>>>> ~s~n", [NewNode, ?ADD_NODE_MESSAGE , atom_to_list(Node)]),
                             {?MODULE, Node} ! {?ADD_NODE_MESSAGE, NewNode } end,
@@ -68,6 +73,7 @@ addNodeStart(State, NewNode) when (node() == State#state.coordinator) ->
     NewState;
 
 addNodeStart(State, Node) -> 
+    erlang:monitor_node(Node, true),
     NewState = addNode(State,Node),
     loop(NewState).
 
@@ -79,7 +85,7 @@ addNode(State, Node) ->
 
 removeNode(State, Node) ->
     NewList = lists:delete(Node, State#state.knownnodes),
-    NewState = State#state{ knownnodes = NewList, coordinator = Node },
+    NewState = State#state{ knownnodes = NewList },
     NewState.
 
 startElection(State, Nodes) ->
