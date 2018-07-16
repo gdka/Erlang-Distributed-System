@@ -22,6 +22,9 @@ start(Nodes) ->
 loop(State) ->
   Timeout = State#state.timeout,
   Coordinator = State#state.coordinator,
+  io:format("current coordinator: ~s~n",[atom_to_list(Coordinator)]),
+  io:format("current nodes: ~n"),
+  lists:foreach(fun(X) -> io:format("~s~n", [atom_to_list(X)]) end, State#state.knownnodes),
   NewState = receive
                {?ELECTION_MESSAGE, Node} -> handleElectionMessage(State, Node);
                {?ELECTION_MESSAGE_RESPONSE, _} -> waitForCoordinatorMessage(State);
@@ -35,6 +38,7 @@ loop(State) ->
   loop(NewState).
 
 addMeToTheSystem(Node) ->
+    erlang:monitor_node(Node, true),
     sendAddMessage(Node),
     register(?MODULE, self()),
     receive
@@ -43,10 +47,14 @@ addMeToTheSystem(Node) ->
     NewState = #state{ knownnodes = nodes(), coordinator = Node },
     loop(NewState).
 
-addNodeStart(State, Node) when (node() == State#state.coordinator) ->
-    lists:foreach(fun sendAddMessage/1, State#state.knownnodes),
-    NewState = addNode(State, Node),
-    sendAddReplyMessage(Node, NewState),
+addNodeStart(State, NewNode) when (node() == State#state.coordinator) ->
+    net_kernel:connect(NewNode),
+    SendAddMessage = fun (Node) ->
+                            io:format("~s >>>>> ~s >>>>> ~s~n", [NewNode, ?ADD_NODE_MESSAGE , atom_to_list(Node)]),
+                            {?MODULE, Node} ! {?ADD_NODE_MESSAGE, NewNode } end,
+    lists:foreach(SendAddMessage, State#state.knownnodes),
+    NewState = addNode(State, NewNode),
+    sendAddReplyMessage(NewNode, NewState),
     NewState;
 
 addNodeStart(State, Node) -> 
