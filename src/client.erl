@@ -1,26 +1,30 @@
 -module(client).
--export([send/2]).
+-export([send/4]).
 
 
-send(File_name, encode) ->
+send(File_name, Output, DNS, encode) ->
     register(?MODULE, self()),
     {ok, FILE} = file:read_file(File_name),
-    {naming, naming@localhost} ! {whoismaster, {?MODULE, node()}}, 
+    {naming, DNS} ! {whoismaster, {?MODULE, node()}}, 
     MASTER = receive 
 		{ok, Master } -> Master
 	     end,
     {bully, MASTER } ! {'ENCODE', FILE,{?MODULE,  node()}},
-    receive
-       {ok, Encoded} -> Encoded
-    after 30000 ->
-            io:format("HOLIS")
+    Encoded = receive
+       {ok, Encoded1} -> Encoded1
+    end,
+    file:write_file(Output, Encoded);
 
-    end;
-send(DECRYPTED, decode) ->
+
+send(FILE, Output, DNS, decode) ->
+  {ok, DECRYPTED} = file:read_file(FILE),
     register(?MODULE, self()),
-    {bully, master@localhost} ! {'DECODE', DECRYPTED, {?MODULE,  node()}},
+    {naming, DNS} ! {whoismaster, {?MODULE, node()}},
+      MASTER = receive 
+                {ok, Master } -> Master
+             end,
+    {bully, MASTER} ! {'DECODE', DECRYPTED, {?MODULE,  node()}},
     receive
        {ok, Decoded} -> Decoded
-    after 30000 ->
-            io:format("HOLIS")
-    end.
+    end,
+    file:write_file(Output, Decoded).

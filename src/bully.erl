@@ -14,7 +14,7 @@
 -define(RESPONSE_TIMEOUT, 10).
 -define(ENCODE_MESSAGE,'ENCODE').
 -define(DECODE_MESSAGE,'DECODE').
--record(state, {timeout = infinity, knownnodes = [], coordinator = node(),dns=naming@localhost}).
+-record(state, {timeout = infinity, knownnodes = [], coordinator = node(), dns= 'naming@192.168.1.128'} ).
 
 start(Nodes) ->
   register(?MODULE, self()),
@@ -44,7 +44,7 @@ loop(State) ->
 
 addMeToTheSystem() ->
     register(?MODULE, self()),
-    {naming, naming@localhost} ! {whoismaster,{ ?MODULE,node()}},
+    {naming, 'naming@192.168.1.128' } ! {whoismaster,{ ?MODULE,node()}},
     Node = receive
              { ok, Master } -> Master
            end, 
