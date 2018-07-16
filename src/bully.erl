@@ -33,8 +33,8 @@ loop(State) ->
                {?ELECTION_MESSAGE_RESPONSE, _} -> waitForCoordinatorMessage(State);
                {?COORDINATOR_MESSAGE, Node} -> setCoordinator(State, Node);
                {?ADD_NODE_MESSAGE, Node} -> addNodeStart(State, Node);
-               {nodedown, Coordinator} -> setCoordinator(State,node()), startElection(State, State#state.knownnodes);
-               {nodedown, Node } -> io:format("sss~n"),removeNode(State, Node)
+               {nodedown, Coordinator} -> NS = removeNode(State, Coordinator), setCoordinator(NS ,node()), startElection(NS, NS#state.knownnodes);
+               {nodedown, Node } ->removeNode(State, Node)
              after
                Timeout -> becomeCoordinator(State)
              end,
