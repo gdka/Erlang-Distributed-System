@@ -9,9 +9,10 @@ key(KeyPath) ->
 
 
 encode(FILERAW) ->
-	 PrivateKey = key("keys/public"),
+	PrivateKey = key("keys/public"),
 	public_key:encrypt_public(FILERAW, PrivateKey).
 
 decode(ENCRYPTED) ->
 	PublicKey = key("keys/private"),
-	Decoded = public_key:decrypt_private(ENCRYPTED, PublicKey).
+	public_key:decrypt_private(ENCRYPTED, PublicKey).
+
